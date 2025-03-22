@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Ticket</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Buy Your Ticket</h2>
+        <form id="payment-form">
+            <input type="text" id="name" placeholder="Your Name" required>
+            <input type="email" id="email" placeholder="Your Email" required>
+            <input type="text" id="contact" placeholder="Your Contact" required>
+            <select id="ticket_type" required>
+                <option value="golden" data-amount="200000">Golden - ₹2000</option>
+                <option value="diamond" data-amount="500000">Diamond - ₹5000</option>
+                <option value="silver" data-amount="100000">Silver - ₹1000</option>
+            </select>
+            <button type="button" id="rzp-button1">Proceed to Pay</button>
+        </form>
+    </div>
+<script>
+    document.getElementById('rzp-button1').onclick = function (e) {
+        e.preventDefault();
+        
+        let name = document.getElementById("name").value;
+        let email = document.getElementById("email").value;
+        let contact = document.getElementById("contact").value;
+        let ticketType = document.getElementById("ticket_type");
+        let ticket = ticketType.options[ticketType.selectedIndex].value;
+        let amount = ticketType.options[ticketType.selectedIndex].getAttribute("data-amount");
+    
+        fetch("/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, contact, amount })
+        })
+        .then(response => response.json())
+        .then(data => {
+            var options = {
+                "key": "",  // Replace with your actual Razorpay Key ID
+                "amount": amount,
+                "currency": "INR",
+                "name": "Event Ticket",
+                "description": "Purchase Ticket",
+                "order_id": data.order_id,
+                "handler": function (response) {
+                // Fetch transaction ID
+                var transactionId = response.razorpay_payment_id;
+                
+                // You can use the transactionId variable as needed
+                console.log("Transaction ID:", transactionId);
+
+                // Further processing like generating a ticket
+                fetch("/generate-ticket", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, contact, ticket, transactionId })
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    // Code to handle ticket generation
+                    let link = document.createElement("a");
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = "ticket.pdf";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                })
+                .catch(error => {
+                    alert("Ticket generation failed: " + error);
+                });
+            },
+
+                "prefill": { "name": name, "email": email, "contact": contact },
+                "theme": { "color": "#28a745" }
+            };
+    
+            var rzp1 = new Razorpay(options);
+            rzp1.on('payment.failed', function (response) {
+                alert("Payment failed: " + response.error.description);
+            });
+            rzp1.open();
+        })
+        .catch(error => {
+            alert("Order creation failed: " + error);
+        });
+    };
+
+</script>
+</body>
+</html>    
