@@ -12,7 +12,7 @@ This repository provides an **Event Management System** with integrated **Razorp
 ## 🛠 Tech Stack
 - **Frontend**: HTML, CSS, JavaScript (or React if applicable)  
 - **Backend**: Python, Flask  
-- **Database**: MongoDB / MySQL  
+- **Database**: sqlite  
 - **Payment Gateway**: Razorpay API  
 
 ## 📦 Installation & Setup
